@@ -8,6 +8,8 @@ import os
 import time
 import pickle
 
+# Version 1.01
+# Bugs: Currently only works with Eagle Pass LOI
 
 # URL of Jazz website
 url = input('Please enter the URL of the "send application documents" results for a job:\n')
@@ -53,6 +55,10 @@ first_candidate.click()
 LOI_location = None
 LOI_signed = None
 app_signed = None
+
+# Function to remove leading 1's
+def remove_leading_one(s):
+    return s[1:] if s.startswith('1') else s
 
 # Wait for page load
 time.sleep(3)
@@ -127,7 +133,18 @@ while True:
     get_phone_element = driver.find_element(By.XPATH, "//a[@class='ng-binding' and starts-with(@href, 'tel:')]")
     applicant_phone = get_phone_element.text
     applicant_phone = applicant_phone.replace(" ","").replace("-","").replace("(","").replace(")","").replace("+","")
+    remove_leading_one(applicant_phone)
+    try:
+        applicant_phone = int(applicant_phone)
+    except ValueError:
+        print("Could not convert to an int")
     print(applicant_phone)
+
+    # Applicant Home
+    get_home_address_element = driver.find_element(By.XPATH, "//span[@class='ng-binding' and contains(@ng-bind, '$ctrl.candidate')]")
+
+    home_address = get_home_address_element.text
+    print(home_address)
 
     # Location
     get_location_element = driver.find_element(By.XPATH, "//span[@class='jz-utl-color-black ng-binding' and contains(@ng-bind, 'location')]")
@@ -146,7 +163,7 @@ while True:
     # Write to Excel spreadsheet if email does not exist in column G
     if applicant_email not in jnd['Email'].values:
         # Set all above variables to columns
-        new_row = {'Recruiter': "Tony", 'Sector': applicant_loc, 'Location': applicant_loc, 'Last Name': applicant_last_name, 'First Name': applicant_first_name, 'Phone': applicant_phone, 'Email': applicant_email, 'Date Applied': date_signed, 'LOI': LOI_signed, 'APP': app_signed} 
+        new_row = {'Recruiter': "Tony", 'Sector': home_address, 'Location': applicant_loc, 'Last Name': applicant_last_name, 'First Name': applicant_first_name, 'Phone': applicant_phone, 'Email': applicant_email, 'Date Applied': date_signed, 'LOI': LOI_signed, 'APP': app_signed} 
         # Write to sheet
         jnd.loc[len(jnd)] = new_row
 
